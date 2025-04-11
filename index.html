@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crime Analytics Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: #f1f5f9;
+            color: #1f2937;
+        }
+
+        header {
+            background: #003366;
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: #ffffff;
+        }
+
+        .subtext {
+            font-size: 0.95rem;
+            color: #5dade2;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        }
+
+        h2, h3, h4 {
+            margin-top: 30px;
+            color: #003366;
+        }
+
+        form {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        label {
+            font-weight: 600;
+        }
+
+        select {
+            flex: 1;
+            padding: 10px 14px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: #fff;
+            transition: border-color 0.3s ease;
+        }
+
+        select:hover, select:focus {
+            border-color: #0a74da;
+            outline: none;
+        }
+
+        button {
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: 500;
+            background: #0a74da;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #0658a5;
+        }
+
+        .station-block {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9fafb;
+            border-left: 6px solid #0a74da;
+            border-radius: 8px;
+        }
+
+        .station-block h4 {
+            margin-bottom: 10px;
+        }
+
+        /* Specific colors for stations */
+        .station-mapusa {
+            border-left-color: #2e86c1;
+        }
+
+        .station-anjuna {
+            border-left-color: #28b463;
+        }
+
+        .station-colvale {
+            border-left-color: #af7ac5;
+        }
+
+        ul {
+            padding-left: 20px;
+            margin-top: 10px;
+        }
+
+        iframe {
+            width: 100%;
+            height: 500px;
+            margin-top: 25px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+        }
+
+        .error {
+            color: #dc2626;
+            background: #fee2e2;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Crime Analytics & Deployment Dashboard</h1>
+        <p class="subtext">Smart analysis of crime trends and police deployment suggestions</p>
+    </header>
+
+    <div class="container">
+        <form method="POST">
+            <label for="crime_type"><strong>Select Crime Type:</strong></label>
+            <select name="crime_type" id="crime_type" required>
+                {% for crime in crimes %}
+                    <option value="{{ crime }}" {% if results and crime == results.matched_display %}selected{% endif %}>{{ crime }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Analyze</button>
+        </form>
+
+        {% if results %}
+            {% if results.error %}
+                <div class="error">{{ results.error }}</div>
+            {% else %}
+                <h2>Analysis for: {{ results.matched_display }}</h2>
+                <p><strong>Top Reporting Police Station:</strong> {{ results.top_station }} ({{ results.top_station_cases }} cases)</p>
+                <p><strong>Most Common Crime Location:</strong> {{ results.top_location }} ({{ results.top_location_cases }} cases)</p>
+
+                {% if results.predicted_location %}
+                    <p><strong>Crime Location identified using via KNN:</strong> {{ results.predicted_location }}</p>
+                {% endif %}
+
+                <h3>Police Deployment Recommendations</h3>
+                {% for info in results.allocation_info %}
+                    <div class="station-block 
+                        {% if 'Mapusa' in info.station %}station-mapusa{% endif %}
+                        {% if 'Anjuna' in info.station %}station-anjuna{% endif %}
+                        {% if 'Colvale' in info.station %}station-colvale{% endif %}
+                    ">
+                        <h4>{{ info.station }}</h4>
+                        <ul>
+                            {% for a in info.allocation %}
+                                <li>{{ a }}</li>
+                            {% endfor %}
+                        </ul>
+                        <p><strong>Peak Crime Months:</strong> {{ info.peak_months | join(', ') }}</p>
+                    </div>
+                {% endfor %}
+
+                {% if results.map_path %}
+                    <h3>Crime Hotspot Map</h3>
+                    <iframe src="{{ results.map_path }}"></iframe>
+                {% endif %}
+            {% endif %}
+        {% endif %}
+    </div>
+</body>
+</html>
